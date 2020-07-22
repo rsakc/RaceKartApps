@@ -295,7 +295,7 @@ server <- function(input, output,session) {
     #If facet option is selected
     if(input$facets != "None"){
       myplot <- myplot + facet_wrap(as.formula(paste("~", input$facets))) +
-        labs(title = paste("Plot of",input$yvar, "by",input$xvar, "and Faceted by", input$facets)) +
+        labs(title = paste("Plot of",input$yvar, "by",input$xvar, "and Colored by", input$color, "and Faceted by", input$facets)) +
         theme(strip.text = element_text(size = 16))
     }
     
