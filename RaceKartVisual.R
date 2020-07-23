@@ -1,4 +1,4 @@
-#Last Updated on July 22 2020
+#Last Updated on July 23 2020
 
 #Loading Libraries
 library(shiny)
@@ -114,7 +114,7 @@ ui <- fluidPage(
                            selected = "None",
                            multiple = FALSE),
                
-               downloadButton('downloadData', label = "Racer Data"),
+               downloadButton('downloadData', label = "Race Kart Data"),
                
                a(h5("Instructor Resources"),
                  href="https://stat2labs.sites.grinnell.edu/racer.html", 
