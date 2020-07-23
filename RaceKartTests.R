@@ -1,4 +1,4 @@
-#Last Updated on July 22 2020
+#Last Updated on July 23 2020
 
 #Loading Libraries
 library(shiny)
@@ -126,7 +126,7 @@ ui <- fluidPage(
            checkboxInput('bplot',"Add boxplot", FALSE),
            checkboxInput("summary", "Show Summary Statistics", FALSE),
            
-           downloadButton('downloadData', label = "Racer Data"),
+           downloadButton('downloadData', label = "Race Kart Data"),
            
            a(h5("Instructor Details"),
              href="https://stat2labs.sites.grinnell.edu/racer.html", 
@@ -512,6 +512,298 @@ server <- function(input, output,session) {
       }
     })
     
+    
+    #Residual Histogram (RPLOT 1)
+    output$rplot1 <- renderPlot({
+      
+      #Using reactive data
+      plotData <- plotDataR()
+      
+      #We need data for tests to run
+      if(nrow(plotData) > 0){
+      
+      #Test is Not None
+      if(input$tests != "None"){
+        
+        #Setting up
+        YVariable = plotData %>% pull(input$yvar)
+        XVariable = plotData %>% pull(input$xvar)
+        XVariable = drop.levels(as.factor(XVariable))
+        ColorVariable = plotData %>% pull(input$color)
+        ColorVariable = drop.levels(as.factor(ColorVariable))
+        PlayerID = plotData$PlayerID
+        
+        
+        ##Two sample t-test/Two Sample Randomization test
+        if(input$tests %in% c("two-sample t-test", "Two Sample Randomization Test")){
+          
+          #X-variable and Color option must be the same
+          if(input$xvar == input$color) {
+            dropped = drop.levels(as.factor(XVariable))
+            
+            #If there are two levels for the X-variable option, run the test
+            if(nlevels(dropped) == 2) {
+              
+              #Each group needs more than 1 observation
+              check <- plotData %>% group_by_at(input$xvar) %>%
+                summarize(Count = n())
+              
+              if(!(1 %in% check$Count)){
+                
+                #Small Data Frame
+                data <- data.frame(XVariable, YVariable)
+                
+                #Identifying the Two Groups and creating necessary vectors
+                groups <- sort(unique(data$XVariable))
+                group1 <- groups[1]
+                group2 <- groups[2]
+                
+                data1 <- data %>% filter(XVariable == group1)
+                data2 <- data %>% filter(XVariable == group2)
+                
+                group1vec <- data1$YVariable
+                group2vec <- data2$YVariable
+                
+                #Calculate Residuals
+                group1res <- group1vec - mean(group1vec)
+                group2res <- group2vec - mean(group2vec)
+                
+                #Combining residuals into one vector
+                residuals <- c(group1res, group2res)
+                
+                #Remove Message
+                output$residualtext <- renderUI({""})
+                
+                #Creating plot
+                plot <- hist(residuals, main = "Histogram of Residuals",
+                             xlab = "Residuals",
+                             ylab = "Count")
+                
+                return(plot)
+                
+                
+              } else {
+                output$residualtext <- renderUI(HTML(paste(
+                  em("A valid statistical test must be in place for the residual plots to be generated."))))
+              }
+                
+              } else {
+                output$residualtext <- renderUI(HTML(paste(
+                  em("A valid statistical test must be in place for the residual plots to be generated."))))
+              }
+              
+            } else{
+              output$residualtext <- renderUI(HTML(paste(
+                em("A valid statistical test must be in place for the residual plots to be generated."))))
+            }
+          
+          ##ANOVA
+        } else if(input$tests == "ANOVA"){
+          
+          #At least 2 levels for X Variable
+          if(nlevels(XVariable) > 1){
+            
+            #Two way ANOVA
+            if(nlevels(ColorVariable) > 1){
+              model <- aov(YVariable ~ XVariable + ColorVariable + XVariable*ColorVariable)
+              
+              #One way ANOVA
+            } else{
+              model <- aov(YVariable ~ XVariable)
+            }
+            
+            #Remove Message
+            output$residualtext <- renderUI({""})
+            
+            #Creating plot
+            plot <- hist(model$residuals, main = "Histogram of Residuals",
+                         xlab = "Residuals",
+                         ylab = "Count")
+            
+            return(plot)
+           
+          #Less than 2 levels for X Variable 
+          } else{
+            output$residualtext <- renderUI(HTML(paste(
+              em("A valid statistical test must be in place for the residual plots to be generated."))))
+          }
+       
+        ##Block Design 
+        } else if (input$tests == "Block Design") {
+          
+          #Error Message if PlayerID is selected as X-variable or Color
+          if(input$xvar == "PlayerID" | input$color == "PlayerID"){
+            
+            output$residualtext <- renderUI(HTML(paste(
+              em("A valid statistical test must be in place for the residual plots to be generated."))))
+            
+            
+          #We can run the block design test 
+          } else {
+            
+            #At least 2 levels for X Variable
+            if(nlevels(XVariable) > 1){
+              
+              #Two Way Blocked ANOVA
+              if(nlevels(ColorVariable) > 1){
+                model <- aov(YVariable ~ PlayerID + XVariable + ColorVariable + XVariable*ColorVariable)
+                
+                #One Way Blocked
+              } else{
+                model <- aov(YVariable ~ PlayerID + XVariable)
+              }
+          
+              #Remove Message
+              output$residualtext <- renderUI({""})
+              
+              #Creating plot
+              plot <- hist(model$residuals, main = "Histogram of Residuals",
+                           xlab = "Residuals",
+                           ylab = "Count")
+              
+              return(plot)
+              
+            } else{
+              output$residualtext <- renderUI(HTML(paste(
+                em("A valid statistical test must be in place for the residual plots to be generated."))))
+            }
+          }
+        }
+        
+      #Test option is none 
+      } else{
+        output$residualtext <- renderUI(HTML(paste(
+          em("A valid statistical test must be in place for the residual plots to be generated."))))
+      }
+    }
+  })
+        
+        
+        #Normal QQ Plot (RPLOT 2)
+        output$rplot2 <- renderPlot({
+          
+          #Using reactive data
+          plotData <- plotDataR()
+          
+          #We need data for tests to run
+          if(nrow(plotData) > 0){
+          
+          #Test is Not None
+          if(input$tests != "None"){
+            
+            #Setting up
+            YVariable = plotData %>% pull(input$yvar)
+            XVariable = plotData %>% pull(input$xvar)
+            XVariable = drop.levels(as.factor(XVariable))
+            ColorVariable = plotData %>% pull(input$color)
+            ColorVariable = drop.levels(as.factor(ColorVariable))
+            PlayerID = plotData$PlayerID
+            
+            
+            ##Two sample t-test/Two Sample Randomization Test
+            if(input$tests %in% c("two-sample t-test","Two Sample Randomization Test")){
+              
+              #X-variable and Color option must be the same
+              if(input$xvar == input$color) {
+                dropped = drop.levels(as.factor(XVariable))
+                
+                #If there are two levels for the X-variable option, run the test
+                if(nlevels(dropped) == 2) {
+                  
+                  #Each group needs more than 1 observation
+                  check <- plotData %>% group_by_at(input$xvar) %>%
+                    summarize(Count = n())
+                  
+                  if(!(1 %in% check$Count)){
+                    
+                    #Small Data Frame
+                    data <- data.frame(XVariable, YVariable)
+                    
+                    #Identifying the Two Groups and creating necessary vectors
+                    groups <- sort(unique(data$XVariable))
+                    group1 <- groups[1]
+                    group2 <- groups[2]
+                    
+                    data1 <- data %>% filter(XVariable == group1)
+                    data2 <- data %>% filter(XVariable == group2)
+                    
+                    group1vec <- data1$YVariable
+                    group2vec <- data2$YVariable
+                    
+                    #Calculate Residuals
+                    group1res <- group1vec - mean(group1vec)
+                    group2res <- group2vec - mean(group2vec)
+                    
+                    #Combining residuals into one vector
+                    residuals <- c(group1res, group2res)
+                    
+                    #Creating plot
+                    plot <- qqnorm(residuals) 
+                    plot <- qqline(residuals)
+                    
+                    return(plot)
+                    
+                  }
+                }
+              }
+              
+            ##ANOVA 
+            } else if(input$tests == "ANOVA") {
+              
+              #At least 2 levels for X Variable
+              if(nlevels(XVariable) > 1){
+                
+                #Two way ANOVA
+                if(nlevels(ColorVariable) > 1){
+                  model <- aov(YVariable ~ XVariable + ColorVariable + XVariable*ColorVariable)
+                }
+                
+                #One way ANOVA
+                else{
+                  model <-  aov(YVariable ~ XVariable)
+                }
+                
+                #Creating plot
+                plot <- qqnorm(model$residuals) 
+                plot <- qqline(model$residuals)
+                
+                return(plot)
+                
+              }
+              
+            ##Block Design
+            } else if (input$tests == "Block Design") {
+              
+              #Error Message if PlayerID is selected as X-variable or Color
+              if(input$xvar == "PlayerID" | input$color == "PlayerID"){
+                
+              } else {
+                
+                #At least 2 levels for X Variable
+                if(nlevels(XVariable) > 1){
+                  
+                  #Two Way Blocked ANOVA
+                  if(nlevels(ColorVariable) > 1){
+                    model <- aov(YVariable ~ PlayerID + XVariable + ColorVariable + XVariable*ColorVariable)
+                    
+                    #One Way Blocked
+                  } else{
+                    model <- aov(YVariable ~ PlayerID + XVariable)
+                  }
+                  
+                  #Creating plot
+                  plot <- qqnorm(model$residuals) 
+                  plot <- qqline(model$residuals)
+                  
+                  return(plot)
+                }
+              }
+            }
+          }
+         }
+       })
+            
+        
     return(myplot)
   
   })
@@ -531,8 +823,5 @@ server <- function(input, output,session) {
 #Closes Server 
 }
 
-
-  
-          
 #Creating Shiny App
 shinyApp(ui = ui, server = server)
