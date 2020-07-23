@@ -16,11 +16,15 @@ library(tidyr)
 n <- sample(c(0,1), size = 1)
 
 if(n == 0){
+  #Sample data for now
   data.all <- readr::read_csv("RaceKartData.csv")
+  
   #data.all <-readr::read_csv("https://www.stat2games.sites.grinnell.edu/data/racekart/getdata.php") 
   
 } else {
+  #Sample data for now
   data.all <- readr::read_csv("RaceKartData.csv")
+  
   #data.all <-readr::read_csv("https://www.stat2games.sites.grinnell.edu/data/racekart/getdata.php") 
 }
 
@@ -96,14 +100,12 @@ ui <- fluidPage(
            
            selectInput(inputId = "xvar",
                        label = "X Variable:",
-                       #columns of the dataset
                        choices = c("Body", "Engine", "Tire", "Track", "Surface", "PlayerID"),
                        selected = "Body",
                        multiple = FALSE),
            
            selectInput(inputId = "yvar",
                        label = "Y Variable:",
-                       #columns of the dataset
                        choices = c("FinishTime", "TopSpeedReached", "TimeToTopSpeed"),
                        selected = "FinishTime",
                        multiple = FALSE)),
@@ -150,9 +152,7 @@ ui <- fluidPage(
                         splitLayout(cellWidths = c("50%", "50%"), 
                                     plotOutput("rplot1"), plotOutput("rplot2"))))
              
-           ))
-        ))
-
+           ))))
 
 #Server
 server <- function(input, output,session) {
@@ -803,7 +803,7 @@ server <- function(input, output,session) {
          }
        })
             
-        
+    #Return Visual
     return(myplot)
   
   })
