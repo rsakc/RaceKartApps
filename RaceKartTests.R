@@ -1,4 +1,4 @@
-#Last Updated on July 23 2020
+#Last Updated on July 23 2020 
 
 #Loading Libraries
 library(shiny)
@@ -34,6 +34,7 @@ data.all <- mutate(data.all, Level = ifelse(Sandbox == "1", "Sandbox", "Other"))
 #Renaming Columns (To be removed later)
 data.all <- data.all %>% 
   rename(GameDate = Date, FinishTime = FinishedTime, TopSpeedReached = TopSpeed)
+
 
 #Creating a Date column
 data.all <- data.all %>% mutate(Date = str_sub(GameDate, 1, 10))
@@ -291,14 +292,14 @@ server <- function(input, output,session) {
         XVariable = drop.levels(as.factor(XVariable))
         ColorVariable = plotData %>% pull(input$color)
         ColorVariable = drop.levels(ColorVariable)
-        PlayerID = plotData$PlayerID
+        PlayerID = drop.levels(as.factor(plotData$PlayerID))
         
         #Block design option is selected
         if(input$tests == "Block Design"){
           
           #Error Message if PlayerID is selected as X Variable or Color
           if(input$xvar == "PlayerID" | input$color == "PlayerID"){
-            "When using the Block Design, the X-Variabe/Color Variable cannot be PlayerID"
+            "When using the Block Design, the X-Variable/Color Variable cannot be PlayerID"
            
           #We can run the block design test 
           } else {
@@ -308,11 +309,11 @@ server <- function(input, output,session) {
             
               #Two Way Blocked ANOVA
               if(nlevels(ColorVariable) > 1){
-                anovatest = anova(aov(YVariable ~ PlayerID + XVariable + ColorVariable + XVariable*ColorVariable))
+                anovatest = aov(YVariable ~ XVariable + PlayerID + ColorVariable + XVariable*ColorVariable)
               
               #One Way Blocked
               } else{
-                anovatest = aov(YVariable ~ PlayerID + XVariable)
+                anovatest = aov(YVariable ~ XVariable + PlayerID)
               }
               
               #Making Tidy table and adding columns/rows
@@ -531,7 +532,7 @@ server <- function(input, output,session) {
         XVariable = drop.levels(as.factor(XVariable))
         ColorVariable = plotData %>% pull(input$color)
         ColorVariable = drop.levels(as.factor(ColorVariable))
-        PlayerID = plotData$PlayerID
+        PlayerID = drop.levels(as.factor(plotData$PlayerID))
         
         
         ##Two sample t-test/Two Sample Randomization test
@@ -697,7 +698,7 @@ server <- function(input, output,session) {
             XVariable = drop.levels(as.factor(XVariable))
             ColorVariable = plotData %>% pull(input$color)
             ColorVariable = drop.levels(as.factor(ColorVariable))
-            PlayerID = plotData$PlayerID
+            PlayerID = drop.levels(as.factor(plotData$PlayerID))
             
             
             ##Two sample t-test/Two Sample Randomization Test
@@ -808,7 +809,6 @@ server <- function(input, output,session) {
   
   })
   
-
   #Download Data
   output$downloadData <- downloadHandler(
     
